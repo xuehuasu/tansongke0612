@@ -1,93 +1,135 @@
-package com.tansongke.model;
+package com.tansongke.dao;
+
+
+import com.tansongke.model.Product;
 
 import java.io.InputStream;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
-public class Product {
-    private int productId;
-    private String productName;
-    private String productDescription;
-    private InputStream picture;
-    private double price;
-    private int categoryId;
-    private String base64Image;
+public class ProductDao implements  IProductDao{
+    @Override
+    public int save(Product product, Connection con) throws SQLException {
+        int n = 0;
+        String sql = "insert into product(ProductName,ProductDescription,Picture,price,CategoryID) values(?,?,?,?,?)";
+        PreparedStatement pt = con.prepareStatement(sql);
+        pt.setString(1, product.getProductName());
+        pt.setString(2, product.getProductDescription());
+        if(product.getPicture()!=null) {
+            //for sql server
+            pt.setBinaryStream(3, product.getPicture());
+            //for mysql
+            //   pt.setBlob(3, product.getPicture());
+        }else pt.setBinaryStream(3, null);
+        pt.setDouble(4, product.getPrice());
+        pt.setInt(5, product.getCategoryId());
+        n = pt.executeUpdate();
+        if (n > 0) {
+            return n;
+        }
+        return 0;
+    }//end save
 
-    public Product(){}
-    public Product(int productId, String productName, String productDescription, InputStream picture, double price, int categoryId, String base64Image) {
-        this.productId = productId;
-        this.productName = productName;
-        this.productDescription = productDescription;
-        this.picture = picture;
-        this.price = price;
-        this.categoryId = categoryId;
-        this.base64Image = base64Image;
-    }
 
-    public int getProductId() {
-        return productId;
-    }
 
-    public void setProductId(int productId) {
-        this.productId = productId;
-    }
+    @Override
+    public int delete(Integer productId, Connection con) throws SQLException {
+        String sql="delete from Product where productId='"+productId+"'";
+        PreparedStatement pt=con.prepareStatement(sql);
+        int rs=pt.executeUpdate();
+        return rs;
 
-    public String getProductName() {
-        return productName;
-    }
-
-    public void setProductName(String productName) {
-        this.productName = productName;
-    }
-
-    public String getProductDescription() {
-        return productDescription;
-    }
-
-    public void setProductDescription(String productDescription) {
-        this.productDescription = productDescription;
-    }
-
-    public InputStream getPicture() {
-        return picture;
-    }
-
-    public void setPicture(InputStream picture) {
-        this.picture = picture;
-    }
-
-    public double getPrice() {
-        return price;
-    }
-
-    public void setPrice(double price) {
-        this.price = price;
-    }
-
-    public int getCategoryId() {
-        return categoryId;
-    }
-
-    public void setCategoryId(int categoryId) {
-        this.categoryId = categoryId;
-    }
-
-    public String getBase64Image() {
-        return base64Image;
-    }
-
-    public void setBase64Image(String base64Image) {
-        this.base64Image = base64Image;
     }
 
     @Override
-    public String toString() {
-        return "Product{" +
-                "productId=" + productId +
-                ", productName='" + productName + '\'' +
-                ", productDescription='" + productDescription + '\'' +
-                ", picture=" + picture +
-                ", price=" + price +
-                ", categoryId=" + categoryId +
-                ", base64Image='" + base64Image + '\'' +
-                '}';
+    public int update(Product instance, Connection con) throws SQLException{
+        String sql="update Product set productName='"+instance.getProductName()+"',productDescription='"+instance.getProductDescription()+"',picture='"+instance.getPicture()+"',price='"+instance.getPrice()+"',categoryId='"+instance.getCategoryId()+"' ";
+        PreparedStatement pt=con.prepareStatement(sql);
+        int rs=pt.executeUpdate();
+        return rs;
+    }
+
+
+    @Override
+    public Product findById(Integer productId, Connection con) throws SQLException{
+        Product p=null;
+        String sql="select *from Product where productId='"+productId+"' ";
+        PreparedStatement pt=con.prepareStatement(sql);
+        ResultSet rs=pt.executeQuery();
+        if(rs.next()){
+            p=new Product(rs.getInt("productId"),rs.getString("productName"),rs.getString("productDescription"),rs.getBinaryStream("picture"),rs.getDouble("price"),rs.getInt("CategoryId"));
+        }
+        return p;
+    }
+
+    @Override
+    public List<Product> findByCategoryId(int categoryId, Connection con)throws SQLException {
+        List<Product>p=new ArrayList<>();
+        String sql="select *from Product where categoryId='"+categoryId+"' ";
+        PreparedStatement pt=con.prepareStatement(sql);
+        ResultSet rs=pt.executeQuery();
+        while(rs.next()){
+            Product p2=new Product(rs.getInt("productId"),rs.getString("productName"),rs.getString("productDescription"),rs.getBinaryStream("picture"),rs.getDouble("price"),rs.getInt("CategoryId"));
+            p.add(p2);
+        }
+        return p;
+    }
+
+
+    @Override
+    public List<Product> findByPrice(double minPrice, double maxPrice, Connection con) throws SQLException {
+        List<Product>p=new ArrayList<>();
+        String sql="select *from Product where price between '"+minPrice+"' and '"+maxPrice+"' ";
+        PreparedStatement pt=con.prepareStatement(sql);
+        ResultSet rs=pt.executeQuery();
+        while(rs.next()){
+            Product p2=new Product(rs.getInt("productId"),rs.getString("productName"),rs.getString("productDescription"),rs.getBinaryStream("picture"),rs.getDouble("price"),rs.getInt("CategoryId"));
+            p.add(p2);
+        }
+        return p;
+    }
+
+    @Override
+    public List<Product> findAll(Connection con) throws SQLException {
+        List<Product>p=new ArrayList<>();
+        String sql="select *from Product ";
+        PreparedStatement pt=con.prepareStatement(sql);
+        ResultSet rs=pt.executeQuery();
+        while(rs.next()){
+            Product p2=new Product(rs.getInt("productId"),rs.getString("productName"),rs.getString("productDescription"),rs.getBinaryStream("picture"),rs.getDouble("price"),rs.getInt("CategoryId"));
+            p.add(p2);
+        }
+        return p;
+
+    }
+
+    @Override
+    public List<Product> findByProductName(String productName, Connection con) throws SQLException {
+        List<Product>p=new ArrayList<>();
+        String sql="select *from Product where price productName= '"+productName+"' ";
+        PreparedStatement pt=con.prepareStatement(sql);
+        ResultSet rs=pt.executeQuery();
+        while(rs.next()){
+            Product p2=new Product(rs.getInt("productId"),rs.getString("productName"),rs.getString("productDescription"),rs.getBinaryStream("picture"),rs.getDouble("price"),rs.getInt("CategoryId"));
+            p.add(p2);
+        }
+        return p;
+    }
+
+    @Override
+    public List<Product> getPicture(Integer productId, Connection con) throws SQLException {
+        List<Product>p=new ArrayList<>();
+        String sql="select *from Product where productId='"+productId+"' ";
+        PreparedStatement pt=con.prepareStatement(sql);
+        ResultSet rs=pt.executeQuery();
+        while(rs.next()){
+            Product p2=new Product(rs.getInt("productId"),rs.getString("productName"),rs.getString("productDescription"),rs.getBinaryStream("picture"),rs.getDouble("price"),rs.getInt("CategoryId"));
+            p.add(p2);
+        }
+        return p;
     }
 }
